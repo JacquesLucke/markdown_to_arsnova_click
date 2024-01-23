@@ -1,1 +1,107 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to arsnova.click</title>
+
+    <style>
+        main {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        textarea {
+            margin: 1em;
+            width: 50%;
+            height: 90%;
+        }
+
+        #input_area {
+            flex: 1;
+        }
+
+        #output_area {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <textarea id="input_area" oninput="onInputChange()"></textarea>
+        <textarea id="output_area" readonly></textarea>
+    </main>
+
+    <script>
+        class Tokens {
+            constructor(text) {
+                this.text = text;
+                this.index = 0;
+            }
+
+            nextIs(str) {
+                return this.text.startsWith(str, this.index);
+            }
+
+            consumeLine() {
+                const newline_index = this.text.indexOf("\n", this.index);
+                const str = this.text.slice(this.index, newline_index);
+                this.index = newline_index + 1
+                return str;
+            }
+
+            consumeUntil(search_str) {
+                const new_index = this.text.indexOf(search_str, this.index);
+                const str = this.text.slice(this.index, new_index);
+                this.index = new_index;
+                return str;
+            }
+
+            get eof() {
+                return this.index == this.text.length;
+            }
+        };
+
+        function onInputChange() {
+            input_markdown = document.getElementById("input_area").value
+            tokens = new Tokens(input_markdown);
+            output_text = JSON.stringify(parseDocument(tokens), null, 2)
+            document.getElementById("output_area").value = output_text
+        }
+
+        function parseDocument(tokens) {
+            tokens.consumeUntil("# ");
+            const title = tokens.consumeLine().slice(2);
+            const tasks = parseTasks(tokens);
+            return {
+                title,
+                tasks,
+            }
+        }
+
+        function parseTasks(tokens) {
+            if (tokens.nextIs("---")) {
+                tokens.consumeLine();
+            }
+            const tasks = [];
+            while (!tokens.eof) {
+                tasks.push(parseTask(tokens));
+                if (tokens.nextIs("---")) {
+                    tokens.consumeLine();
+                }
+            }
+            return tasks;
+        }
+
+        function parseTask(tokens) {
+            task = "";
+            while (!tokens.nextIs("---") && !tokens.eof) {
+                task += tokens.consumeLine() + "\n";
+            }
+            return task.trim();
+        }
+    </script>
+</body>
+</html>
