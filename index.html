@@ -59,13 +59,18 @@
                 return str;
             }
 
+            consume(length) {
+                this.index += length;
+            }
+
             get eof() {
-                return this.index == this.text.length;
+                return this.index >= this.text.length;
             }
         };
 
         function onInputChange() {
             input_markdown = document.getElementById("input_area").value
+            input_markdown = input_markdown.replace("\r", "")
             tokens = new Tokens(input_markdown);
             output_text = JSON.stringify(parseDocument(tokens), null, 2)
             document.getElementById("output_area").value = output_text
@@ -96,11 +101,37 @@
         }
 
         function parseTask(tokens) {
-            task = "";
+            question = "";
+            answers = [];
             while (!tokens.nextIs("---") && !tokens.eof) {
-                task += tokens.consumeLine() + "\n";
+                if (tokens.nextIs("* [")) {
+                    answers.push(parseAnswer(tokens));
+                }
+                else {
+                    question += tokens.consumeLine() + "\n";
+                }
             }
-            return task.trim();
+            question = question.trim();
+            return {
+                question,
+                answers,
+            };
+        }
+
+        function parseAnswer() {
+            tokens.consume("* [".length);
+            const correct = tokens.nextIs("x");
+            tokens.consumeUntil("]");
+            tokens.consume(1);
+            answer = tokens.consumeLine();
+            while (tokens.nextIs("  ") && !tokens.eof) {
+                answer += tokens.consumeLine();
+            }
+            answer = answer.trim();
+            return {
+                answer,
+                correct,
+            }
         }
     </script>
 </body>
