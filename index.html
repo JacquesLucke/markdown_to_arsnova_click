@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,6 +29,7 @@
         }
     </style>
 </head>
+
 <body>
     <main>
         <textarea id="input_area" oninput="onInputChange()"></textarea>
@@ -46,7 +48,10 @@
             }
 
             consumeLine() {
-                const newline_index = this.text.indexOf("\n", this.index);
+                let newline_index = this.text.indexOf("\n", this.index);
+                if (newline_index == -1){
+                    newline_index = this.text.length;
+                }
                 const str = this.text.slice(this.index, newline_index);
                 this.index = newline_index + 1
                 return str;
@@ -72,7 +77,72 @@
             input_markdown = document.getElementById("input_area").value
             input_markdown = input_markdown.replace("\r", "")
             tokens = new Tokens(input_markdown);
-            output_text = JSON.stringify(parseDocument(tokens), null, 2)
+            parsed = parseDocument(tokens);
+
+            result = {
+                name: parsed.title,
+                currentQuestionIndex: -1,
+                questionList: parsed.tasks.map((task) => {
+                    return {
+                        questionText: task.question,
+                        timer: 45,
+                        displayAnswerText: true,
+                        tags: [],
+                        requiredForToken: false,
+                        difficulty: 5,
+                        answerOptionList: task.answers.map((answer) => {
+                            return {
+                                answerText: answer.answer,
+                                isCorrect: answer.correct,
+                                TYPE: "DefaultAnswerOption",
+                            }
+                        }),
+                        showOneAnswerPerRow: true,
+                        TYPE: "MultipleChoiceQuestion",
+                    }
+                }),
+                sessionConfig: {
+                    theme: "Material",
+                    readingConfirmationEnabled: false,
+                    showResponseProgress: true,
+                    confidenceSliderEnabled: false,
+                    music: {
+                        enabled: {
+                            lobby: true,
+                            countdownRunning: true,
+                            countdownEnd: true
+                        },
+                        shared: {
+                            lobby: false,
+                            countdownRunning: false,
+                            countdownEnd: false
+                        },
+                        volumeConfig: {
+                            global: 60,
+                            lobby: 60,
+                            countdownRunning: 60,
+                            countdownEnd: 60,
+                            useGlobalVolume: true
+                        },
+                        titleConfig: {
+                            lobby: "Song3",
+                            countdownRunning: "Song1",
+                            countdownEnd: "Song1"
+                        }
+                    },
+                    nicks: {
+                        memberGroups: [],
+                        maxMembersPerGroup: 10,
+                        autoJoinToGroup: false,
+                        selectedNicks: [],
+                        blockIllegalNicks: true
+                    }
+                },
+                state: "Inactive",
+                currentStartTimestamp: -1
+            };
+
+            output_text = JSON.stringify(result, null, 2)
             document.getElementById("output_area").value = output_text
         }
 
@@ -95,6 +165,9 @@
                 tasks.push(parseTask(tokens));
                 if (tokens.nextIs("---")) {
                     tokens.consumeLine();
+                }
+                else {
+                    break
                 }
             }
             return tasks;
@@ -135,4 +208,5 @@
         }
     </script>
 </body>
+
 </html>
