@@ -35,6 +35,7 @@
         <textarea id="input_area" oninput="onInputChange()"></textarea>
         <textarea id="output_area" readonly></textarea>
     </main>
+    <button onclick="downloadJson()">Download .json</button>
 
     <script>
         class Tokens {
@@ -72,6 +73,18 @@
                 return this.index >= this.text.length;
             }
         };
+
+        function downloadJson() {
+            const text = document.getElementById("output_area").value;
+            const blob = new Blob([text], {type: 'text/json'});
+            const download_link = document.createElement('a');
+            download_link.download = "quiz.json";
+            download_link.href = window.URL.createObjectURL(blob);
+
+            document.body.appendChild(download_link);
+            download_link.click();
+            document.body.removeChild(download_link);
+        }
 
         function onInputChange() {
             input_markdown = document.getElementById("input_area").value
