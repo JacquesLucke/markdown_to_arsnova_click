@@ -117,7 +117,7 @@
                             }
                         }),
                         showOneAnswerPerRow: true,
-                        TYPE: "MultipleChoiceQuestion",
+                        TYPE: task.answers.every((answer) => answer.correct) ? "SurveyQuestion" : "MultipleChoiceQuestion",
                     }
                 }),
                 sessionConfig: {
