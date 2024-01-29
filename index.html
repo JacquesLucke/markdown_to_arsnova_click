@@ -48,7 +48,7 @@
                 return this.text.startsWith(str, this.index);
             }
 
-            consumeLine() {
+            getAndConsumeLine() {
                 let newline_index = this.text.indexOf("\n", this.index);
                 if (newline_index == -1){
                     newline_index = this.text.length;
@@ -58,11 +58,17 @@
                 return str;
             }
 
+            contains(search_str) {
+                return this.text.indexOf(search_str, this.index) != -1;
+            }
+
             consumeUntil(search_str) {
-                const new_index = this.text.indexOf(search_str, this.index);
-                const str = this.text.slice(this.index, new_index);
+                let new_index = this.text.indexOf(search_str, this.index);
+                if (new_index == -1) {
+                    return false;
+                }
                 this.index = new_index;
-                return str;
+                return true;
             }
 
             consume(length) {
@@ -160,8 +166,10 @@
         }
 
         function parseDocument(tokens) {
-            tokens.consumeUntil("# ");
-            const title = tokens.consumeLine().slice(2);
+            if (!tokens.consumeUntil("# ")) {
+                return {title: "No Title", tasks: []};
+            }
+            const title = tokens.getAndConsumeLine().slice(2).trim();
             const tasks = parseTasks(tokens);
             return {
                 title,
@@ -170,14 +178,11 @@
         }
 
         function parseTasks(tokens) {
-            if (tokens.nextIs("---")) {
-                tokens.consumeLine();
-            }
             const tasks = [];
             while (!tokens.eof) {
                 tasks.push(parseTask(tokens));
                 if (tokens.nextIs("---")) {
-                    tokens.consumeLine();
+                    tokens.getAndConsumeLine();
                 }
                 else {
                     break
@@ -194,7 +199,7 @@
                     answers.push(parseAnswer(tokens));
                 }
                 else {
-                    question += tokens.consumeLine() + "\n";
+                    question += tokens.getAndConsumeLine() + "\n";
                 }
             }
             question = question.trim();
@@ -207,11 +212,13 @@
         function parseAnswer() {
             tokens.consume("* [".length);
             const correct = tokens.nextIs("x");
-            tokens.consumeUntil("]");
+            if (!tokens.consumeUntil("]")) {
+                return {};
+            }
             tokens.consume(1);
-            answer = tokens.consumeLine();
+            answer = tokens.getAndConsumeLine();
             while (tokens.nextIs("  ") && !tokens.eof) {
-                answer += tokens.consumeLine();
+                answer += tokens.getAndConsumeLine();
             }
             answer = answer.trim();
             return {
